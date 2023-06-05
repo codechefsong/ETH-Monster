@@ -5,13 +5,37 @@ contract Game {
     // State Variables
     address public immutable owner;
     uint256 public points = 0;
+    uint256[] public nums;
+    mapping(address => bool) public isPay;
+    uint public reward = 0.01 ether;
+
+    event Result(address player, uint256 num, bool isWinner);
 
     constructor(address _owner) {
         owner = _owner;
     }
 
+    function playGame() public payable {
+        require(msg.value >= 0.001 ether, "Failed to send enough value");
+        //require(address(this).balance >= reward, "Not enough reward");
+        isPay[msg.sender] = true;
+    }
+
     function earnPoint() public {
-        points += 1;
+        uint randomNumber = uint(keccak256(abi.encode(block.timestamp, msg.sender))) % 10;
+        nums.push(randomNumber);
+
+        bool isWinner = false;
+
+        if (randomNumber == 7) {
+            isWinner = true;
+        }
+
+        emit Result(msg.sender, randomNumber, isWinner);
+    }
+
+    function getNums() public view returns (uint256[] memory) {
+        return nums;
     }
 
     // Modifier: used to define a set of rules that must be met before or after a function is executed

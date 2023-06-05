@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import kaboom from 'kaboom';
-import { useScaffoldContractRead, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
+import { useScaffoldContractRead, useScaffoldContractWrite, useScaffoldEventSubscriber } from "~~/hooks/scaffold-eth";
+import { notification } from "~~/utils/scaffold-eth";
 
 const MOVE_SPEED = 150;
 
@@ -15,6 +16,27 @@ const Game = () => {
     functionName: "points",
   });
 
+  const { data: nums, isLoading: isNumsLoading } = useScaffoldContractRead({
+    contractName: "Game",
+    functionName: "getNums",
+  });
+
+  const { data: isPay, isLoading: isPayLoading } = useScaffoldContractRead({
+    contractName: "Game",
+    functionName: "isPay",
+    args: [address]
+  });
+
+  useScaffoldEventSubscriber({
+    contractName: "Game",
+    eventName: "Result",
+    listener: (player, num, isWinner) => {
+      console.log(player, num, isWinner);
+      if (isWinner) notification.error(`${num}: You Won`);
+      else notification.error(`${num}: You Lose`);
+    },
+  });
+
   const { writeAsync, isLoading } = useScaffoldContractWrite({
     contractName: "Game",
     functionName: "earnPoint",
@@ -23,11 +45,20 @@ const Game = () => {
     },
   });
 
+  const { writeAsync: payGame, isLoading: payGameLoading } = useScaffoldContractWrite({
+    contractName: "Game",
+    functionName: "playGame",
+    value: "0.001",
+    onBlockConfirmation: txnReceipt => {
+      console.log("📦 Transaction blockHash", txnReceipt.blockHash);
+    },
+  });
+
   useEffect(() => {
-    if(totalCounter) {
+    if(isPay) {
       startGame();
     }
-  }, [totalCounter]);
+  }, [isPay]);
 
   const startGame = () => {
     const k = kaboom({
@@ -35,6 +66,7 @@ const Game = () => {
       global: false,
       // if you don't want kaboom to create a canvas and insert under document.body
       canvas: canvasRef.current,
+      background: [ 0, 204, 153 ]
     })
 
     k.loadSprite("player", "assets/Player.png");
@@ -47,20 +79,20 @@ const Game = () => {
     ])
 
     k.addLevel([
-      `  xxx          x     `,
-      `  x   xxxx  x    x   `,
-      `     x               `,
-      `  x   x    e  x xx   `,
-      `  xxx          x     `,
-      `  x   xxxx  x    x   `,
-      `  x   x    e  x xx   `,
-      `  xxx          x     `,
-      `  x   xxxx  x    x   `,
-      `     x               `,
+      `  xxx          x      `,
+      `  x   xxxx  x    x    `,
+      `    e x               `,
+      `  x   x    e  x  xx   `,
+      `    xx          x     `,
+      `  x   xxxx  x     x   `,
+      `  x   x    e   x xx   `,
+      `  xxx            x    `,
+      `  x   xxxx  x    x    `,
+      `   e  x            e  `,
       `  x   x    e  x xx     `
     ], {
-      tileWidth: 40,
-      tileHeight: 40,
+      tileWidth: 50,
+      tileHeight: 50,
       tiles: {
         "x": () => [
           k.sprite("wall40x40"),
@@ -105,8 +137,18 @@ const Game = () => {
   }
 
   return (
-    <div className='game'>
-      <canvas ref={canvasRef}></canvas>
+    <div>
+      <h1 className='text-3xl text-center mt-5'>Find the real ETH to win a 0.01 ETH</h1>
+      <div className='center'>
+        {!isPay && <button className='py-2 px-4 mb-1 mt-3 bg-green-500 rounded baseline hover:bg-green-300 disabled:opacity-50' onClick={()=> payGame()}>
+          Pay 0.001 ETH
+        </button>}
+      </div>
+      <div className='center'>
+        <div className='game'>
+          <canvas ref={canvasRef}></canvas>
+        </div>
+      </div>
     </div>
   );
 };
