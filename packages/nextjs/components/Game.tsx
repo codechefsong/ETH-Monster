@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAccount } from 'wagmi';
 import kaboom from 'kaboom';
 import { useScaffoldContractRead, useScaffoldContractWrite, useScaffoldEventSubscriber } from "~~/hooks/scaffold-eth";
@@ -7,24 +7,31 @@ import { notification } from "~~/utils/scaffold-eth";
 const MOVE_SPEED = 150;
 
 const Game = () => {
-  const canvasRef = React.useRef(null);
+  const canvasRef = useRef(null);
+
+  const [playerLifes, setPlayerLifes] = useState();
 
   const { address } = useAccount();
 
-  const { data: totalCounter, isLoading: isCounterLoading } = useScaffoldContractRead({
+  const { data: totalCounter } = useScaffoldContractRead({
     contractName: "Game",
     functionName: "points",
   });
 
-  const { data: nums, isLoading: isNumsLoading } = useScaffoldContractRead({
+  const { data: nums} = useScaffoldContractRead({
     contractName: "Game",
     functionName: "getNums",
   });
 
-  const { data: isPay, isLoading: isPayLoading } = useScaffoldContractRead({
+  const { data: life } = useScaffoldContractRead({
     contractName: "Game",
-    functionName: "isPay",
+    functionName: "life",
     args: [address]
+  });
+
+  const { data: canPlay } = useScaffoldContractRead({
+    contractName: "Game",
+    functionName: "canPlay",
   });
 
   useScaffoldEventSubscriber({
@@ -32,8 +39,9 @@ const Game = () => {
     eventName: "Result",
     listener: (player, num, isWinner) => {
       console.log(player, num, isWinner);
-      if (isWinner) notification.error(`${num}: You Won`);
-      else notification.error(`${num}: You Lose`);
+      if (isWinner) notification.success(`${num}: You Won`);
+      else if (num < 5) notification.error(`${num}: You Lose Life`);
+      else notification.info(`${num}: Nothing`);
     },
   });
 
@@ -45,7 +53,7 @@ const Game = () => {
     },
   });
 
-  const { writeAsync: payGame, isLoading: payGameLoading } = useScaffoldContractWrite({
+  const { writeAsync: payGame } = useScaffoldContractWrite({
     contractName: "Game",
     functionName: "playGame",
     value: "0.001",
@@ -55,39 +63,35 @@ const Game = () => {
   });
 
   useEffect(() => {
-    if(isPay) {
+    if(life) {
       startGame();
     }
-  }, [isPay]);
+  }, [canPlay]);
 
   const startGame = () => {
     const k = kaboom({
-      // if you don't want to import to the global namespace
       global: false,
-      // if you don't want kaboom to create a canvas and insert under document.body
       canvas: canvasRef.current,
       background: [ 0, 204, 153 ]
     })
 
-    k.loadSprite("player", "assets/Player.png");
+    k.loadSprite("player-down", "assets/player-down.png");
+    k.loadSprite("player-left", "assets/player-left.png");
+    k.loadSprite("player-right", "assets/player-right.png");
+    k.loadSprite("player-up", "assets/player-up.png");
     k.loadSprite("ethereum", "assets/ethereum.png");
     k.loadSprite("wall40x40", "assets/wall40x40.png");
-
-    k.add([
-      k.text(totalCounter),
-      k.pos(40, 20),
-    ])
 
     k.addLevel([
       `  xxx          x      `,
       `  x   xxxx  x    x    `,
       `    e x               `,
-      `  x   x    e  x  xx   `,
-      `    xx          x     `,
-      `  x   xxxx  x     x   `,
-      `  x   x    e   x xx   `,
-      `  xxx            x    `,
-      `  x   xxxx  x    x    `,
+      `x  x   x   e  x  xx   `,
+      `x    xx         x    x`,
+      `x  x   xxxx  x    x  x`,
+      `x  x   x    e   x xx  `,
+      `  xxx            x   x`,
+      `  x   xxxx  x    x   x`,
       `   e  x            e  `,
       `  x   x    e  x xx     `
     ], {
@@ -109,24 +113,27 @@ const Game = () => {
     });
 
     const player = k.add([
-      k.sprite("player"),
+      k.sprite("player-down"),
       k.pos(100, 100),
       k.area(),
       k.body(),
       'player',
     ]);
 
-    // Control the player with arrow keys
     k.onKeyDown('left', () => {
+      player.use(k.sprite('player-left'));
       player.move(-MOVE_SPEED, 0);
     });
     k.onKeyDown('right', () => {
+      player.use(k.sprite('player-right'));
       player.move(MOVE_SPEED, 0);
     });
     k.onKeyDown('up', () => {
+      player.use(k.sprite('player-up'));
       player.move(0, -MOVE_SPEED);
     });
     k.onKeyDown('down', () => {
+      player.use(k.sprite('player-down'));
       player.move(0, MOVE_SPEED);
     });
 
@@ -140,9 +147,10 @@ const Game = () => {
     <div>
       <h1 className='text-3xl text-center mt-5'>Find the real ETH to win a 0.01 ETH</h1>
       <div className='center'>
-        {!isPay && <button className='py-2 px-4 mb-1 mt-3 bg-green-500 rounded baseline hover:bg-green-300 disabled:opacity-50' onClick={()=> payGame()}>
+        {!canPlay && <button className='py-2 px-4 mb-1 mt-3 bg-green-500 rounded baseline hover:bg-green-300 disabled:opacity-50' onClick={()=> payGame()}>
           Pay 0.001 ETH
         </button>}
+        <p className='ml-3 text-2xl'>Lifes = {life?.toString()}</p>
       </div>
       <div className='center'>
         <div className='game'>

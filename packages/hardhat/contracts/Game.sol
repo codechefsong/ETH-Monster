@@ -6,7 +6,7 @@ contract Game {
     address public immutable owner;
     uint256 public points = 0;
     uint256[] public nums;
-    mapping(address => bool) public isPay;
+    mapping(address => uint256) public life;
     uint public reward = 0.01 ether;
 
     event Result(address player, uint256 num, bool isWinner);
@@ -18,10 +18,11 @@ contract Game {
     function playGame() public payable {
         require(msg.value >= 0.001 ether, "Failed to send enough value");
         //require(address(this).balance >= reward, "Not enough reward");
-        isPay[msg.sender] = true;
+        life[msg.sender] += 3;
     }
 
     function earnPoint() public {
+        require(life[msg.sender] > 0, "Out of life");
         uint randomNumber = uint(keccak256(abi.encode(block.timestamp, msg.sender))) % 10;
         nums.push(randomNumber);
 
@@ -31,11 +32,20 @@ contract Game {
             isWinner = true;
         }
 
+        else if (randomNumber < 5) {
+            life[msg.sender] -= 1;
+        }
+
         emit Result(msg.sender, randomNumber, isWinner);
     }
 
     function getNums() public view returns (uint256[] memory) {
         return nums;
+    }
+
+    function canPlay() public view returns (bool) {
+        if (life[msg.sender] > 0) return true;
+        return false;
     }
 
     // Modifier: used to define a set of rules that must be met before or after a function is executed
