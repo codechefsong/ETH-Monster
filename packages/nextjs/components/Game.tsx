@@ -37,10 +37,10 @@ const Game = () => {
   useScaffoldEventSubscriber({
     contractName: "Game",
     eventName: "Result",
-    listener: (player, num, isWinner) => {
+    listener: (player, num: string, isWinner) => {
       console.log(player, num, isWinner);
       if (isWinner) notification.success(`${num}: You Won`);
-      else if (num < 5) notification.error(`${num}: You Lose Life`);
+      else if (num === 5) notification.error(`${num}: You Lose Life`);
       else notification.info(`${num}: Nothing`);
     },
   });
@@ -56,7 +56,7 @@ const Game = () => {
   const { writeAsync: payGame } = useScaffoldContractWrite({
     contractName: "Game",
     functionName: "playGame",
-    value: "0.001",
+    value: "0.1",
     onBlockConfirmation: txnReceipt => {
       console.log("📦 Transaction blockHash", txnReceipt.blockHash);
     },
@@ -72,7 +72,7 @@ const Game = () => {
     const k = kaboom({
       global: false,
       canvas: canvasRef.current,
-      background: [ 0, 204, 153 ]
+      background: [ 199, 229, 212 ]
     })
 
     k.loadSprite("player-down", "assets/player-down.png");
@@ -145,18 +145,22 @@ const Game = () => {
 
   return (
     <div>
-      <h1 className='text-3xl text-center mt-5'>Find the real ETH to win a 0.01 ETH</h1>
-      <div className='center'>
-        {!canPlay && <button className='py-2 px-4 mb-1 mt-3 bg-green-500 rounded baseline hover:bg-green-300 disabled:opacity-50' onClick={()=> payGame()}>
-          Pay 0.001 ETH
-        </button>}
-        <p className='ml-3 text-2xl'>Lifes = {life?.toString()}</p>
-      </div>
-      <div className='center'>
-        <div className='game'>
-          <canvas ref={canvasRef}></canvas>
+      <h1 className='text-3xl text-center my-5'>Find the real ETH to win a 1 ETH</h1>
+      <div className='flex justify-center'>
+        <div className='mr-5'>
+          <p className='text-2xl mt-10'>Lifes = {life?.toString()}</p>
+          <button className='py-2 px-4 bg-green-500 rounded baseline hover:bg-green-300 disabled:opacity-50' onClick={()=> payGame()}>
+            Add 3 lifes
+          </button>
+          <p className='text-slate-500'>* Cost 0.01 ETH</p>
+        </div>
+        <div>
+          <div className='game'>
+            <canvas ref={canvasRef}></canvas>
+          </div>
         </div>
       </div>
+     
     </div>
   );
 };
