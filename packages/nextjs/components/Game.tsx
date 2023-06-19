@@ -84,16 +84,16 @@ const Game = () => {
 
     k.addLevel([
       `  xxx          x      `,
-      `  x   xxxx  x    x    `,
+      `  x   xxxx  x  e x    `,
       `    e x               `,
-      `x  x   x   e  x  xx   `,
-      `x    xx         x    x`,
-      `x  x   xxxx  x    x  x`,
+      `x  x   x   e   xxxx   `,
+      `x    xx        xx    x`,
+      `x  x  exxxx  xxx  x  x`,
       `x  x   x    e   x xx  `,
       `  xxx            x   x`,
-      `  x   xxxx  x    x   x`,
-      `   e  x            e  `,
-      `  x   x    e  x xx     `
+      `  x   xxxx  xxxx x   x`,
+      `   e  x               `,
+      `  x   x    e  xexx     `
     ], {
       tileWidth: 50,
       tileHeight: 50,
@@ -153,6 +153,9 @@ const Game = () => {
             Add 3 lifes
           </button>
           <p className='text-slate-500'>* Cost 0.01 ETH</p>
+          <p className='text-xl mt-20'>Notes</p>
+          <p className='text-slate-500 mb-0'>* Some Fake ETH can</p>
+          <p className='text-slate-500 mt-0'>cause you a life</p>
         </div>
         <div>
           <div className='game'>
