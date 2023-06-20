@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import Head from "next/head";
 import type { NextPage } from "next";
 import Game from '~~/components/Game';

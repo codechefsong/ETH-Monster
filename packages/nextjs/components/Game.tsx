@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import kaboom from 'kaboom';
 import { useScaffoldContractRead, useScaffoldContractWrite, useScaffoldEventSubscriber } from "~~/hooks/scaffold-eth";
@@ -9,19 +9,7 @@ const MOVE_SPEED = 150;
 const Game = () => {
   const canvasRef = useRef(null);
 
-  const [playerLifes, setPlayerLifes] = useState();
-
   const { address } = useAccount();
-
-  const { data: totalCounter } = useScaffoldContractRead({
-    contractName: "Game",
-    functionName: "points",
-  });
-
-  const { data: nums} = useScaffoldContractRead({
-    contractName: "Game",
-    functionName: "getNums",
-  });
 
   const { data: life } = useScaffoldContractRead({
     contractName: "Game",
@@ -37,7 +25,7 @@ const Game = () => {
   useScaffoldEventSubscriber({
     contractName: "Game",
     eventName: "Result",
-    listener: (player, num: string, isWinner) => {
+    listener: (player: any, num: any, isWinner) => {
       console.log(player, num, isWinner);
       if (isWinner) notification.success(`${num}: You Won`);
       else if (num === 5) notification.error(`${num}: You Lose Life`);
@@ -45,7 +33,7 @@ const Game = () => {
     },
   });
 
-  const { writeAsync, isLoading } = useScaffoldContractWrite({
+  const { writeAsync } = useScaffoldContractWrite({
     contractName: "Game",
     functionName: "earnPoint",
     onBlockConfirmation: txnReceipt => {
@@ -56,7 +44,7 @@ const Game = () => {
   const { writeAsync: payGame } = useScaffoldContractWrite({
     contractName: "Game",
     functionName: "playGame",
-    value: "0.1",
+    value: "0.0001",
     onBlockConfirmation: txnReceipt => {
       console.log("📦 Transaction blockHash", txnReceipt.blockHash);
     },
